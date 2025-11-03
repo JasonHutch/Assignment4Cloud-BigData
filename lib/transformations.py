@@ -4,7 +4,7 @@ import re
 
 class Transformations:
     def __init__(self):
-        self.STOP_WORDS = {
+        self.STOP_WORDS_EN = {
             "a","an","the","and","or","but","if","while","is","are","was","were",
             "in","on","at","by","for","with","about","of","to","from","as","it",
             "i","you","he","she","they","we","me","my","your","his","her",
@@ -31,9 +31,38 @@ class Transformations:
             "own", "same"
         }
 
-    def remove_stop_words(self,input_string:str) -> str:
-        tokens = re.findall(r"[A-Za-z']+", input_string.lower())
-        filtered = [t for t in tokens if t not in self.STOP_WORDS]
+        self.STOP_WORDS_FR = {
+            "le", "la", "les", "un", "une", "des", "de", "du", "à", "au", "aux",
+            "et", "ou", "mais", "donc", "or", "ni", "car", "ce", "cet", "cette",
+            "ces", "mon", "ton", "son", "ma", "ta", "sa", "mes", "tes", "ses",
+            "notre", "votre", "leur", "nos", "vos", "leurs", "je", "tu", "il",
+            "elle", "nous", "vous", "ils", "elles", "me", "te", "se", "moi",
+            "toi", "lui", "eux", "qui", "que", "quoi", "dont", "où", "dans",
+            "sur", "sous", "avec", "sans", "pour", "par", "en", "vers", "chez",
+            "être", "avoir", "faire", "dire", "aller", "voir", "savoir", "pouvoir",
+            "vouloir", "venir", "falloir", "devoir", "croire", "trouver", "donner",
+            "prendre", "parler", "aimer", "passer", "mettre", "est", "sont", "était",
+            "étaient", "sera", "seront", "été", "ai", "as", "a", "avons", "avez",
+            "ont", "avait", "avaient", "aura", "auront", "eu", "suis", "es",
+            "sommes", "êtes", "puis", "peut", "peuvent", "d", "l", "c", "s",
+            "n", "m", "t", "j", "qu", "y", "si", "ne", "pas", "plus", "tous",
+            "tout", "toute", "toutes", "autre", "autres", "même", "mêmes", "tel",
+            "telle", "tels", "telles", "quel", "quelle", "quels", "quelles"
+        }
+
+        self.STOP_WORDS = self.STOP_WORDS_EN  # Default to English
+
+    def remove_stop_words(self,input_string:str, language:str = 'en') -> str:
+        # Select appropriate stop words based on language
+        stop_words = self.STOP_WORDS_FR if language == 'fr' else self.STOP_WORDS_EN
+
+        # For French, include accented characters in regex
+        if language == 'fr':
+            tokens = re.findall(r"[A-Za-zÀ-ÿ']+", input_string.lower())
+        else:
+            tokens = re.findall(r"[A-Za-z']+", input_string.lower())
+
+        filtered = [t for t in tokens if t not in stop_words]
 
         return filtered
     

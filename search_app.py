@@ -1,5 +1,5 @@
 import streamlit as st
-from search_index import SearchIndex
+from lib.search_index import SearchIndex
 import os
 
 # Initialize session state

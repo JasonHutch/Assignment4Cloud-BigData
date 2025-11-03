@@ -1,16 +1,19 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
+from collections import Counter
 
 from helper import Helper
-from transformations import Transformations
+from lib.transformations import Transformations
+from lib.language_detector import LanguageDetector
 from collections import namedtuple
 
-DocumentPosition = namedtuple('DocumentPosition', ['doc_id', 'paragraph_num', 'word_position'])
+DocumentPosition = namedtuple('DocumentPosition', ['doc_id', 'paragraph_num', 'word_position', 'language'])
 
 class SearchIndex:
     def __init__(self):
         self.index = dict()
         self.transformations = Transformations()
+        self.language = LanguageDetector()
         self.helper = Helper()
         self.STOP_WORDS = {
             "a","an","the","and","or","but","if","while","is","are","was","were",
@@ -39,38 +42,45 @@ class SearchIndex:
             "own", "same"
         }
     
-    def index_text_documents(self,path:str) -> None:
+    def index_text_documents(self,path:str, language:str = 'en') -> None:
         """
         iterates through text documents at a certain path. Processing them and adding them to the search index
         """
-        
+
         for filename in os.listdir(path):
             if filename.endswith('.txt'):
                 with open(os.path.join(path, filename), 'r') as file:
                     content = file.read()
-                    paragraphs = content.split('\n\n')
                     
+                    # Detect language from entirety of content
+                    input_distribution = self.language.get_distribution_from_text(content)
+                    language = self.language.detect_language(input_distribution)
+                    
+                    paragraphs = content.split('\n\n')
                     for i, para in enumerate(paragraphs):
-                        tokens = self.process_text(para)
-                        self.index_tokens(tokens, i, filename)
+                        tokens = self.process_text(para, language)
+                        self.index_tokens(tokens, i, filename, language)
                         
             
-    def process_text(self, input_text:str) -> List[str]:
+    def process_text(self, input_text:str, language:str = 'en') -> List[str]:
         input_text = input_text.lower()
-        input_text = ''.join(c for c in input_text if ord(c) < 127)
+        # For French, preserve accented characters; for English, remove non-ASCII
+        if language != 'fr':
+            input_text = ''.join(c for c in input_text if ord(c) < 127)
         input_text = self.transformations.remove_puncuation(input_text)
-        tokens = self.transformations.remove_stop_words(input_text)
-        
+        tokens = self.transformations.remove_stop_words(input_text, language)
+
         return tokens
     
-    def index_tokens(self,tokens:List[str], paragraph_number:int, document_id:str):
+    def index_tokens(self,tokens:List[str], paragraph_number:int, document_id:str, language:str = 'en'):
         for position, token in enumerate(tokens):
             metadata = DocumentPosition(
                 doc_id=document_id,
                 paragraph_num=paragraph_number,
-                word_position=position
+                word_position=position,
+                language=language
             )
-            
+
             if token in self.index:
                 self.index[token].append(metadata)
             else:
@@ -116,7 +126,8 @@ class SearchIndex:
                 expected_pos = DocumentPosition(
                     doc_id=first_pos.doc_id,
                     paragraph_num=first_pos.paragraph_num,
-                    word_position=first_pos.word_position + i
+                    word_position=first_pos.word_position + i,
+                    language=first_pos.language
                 )
                 
                 if expected_pos not in self.index[token]:
@@ -125,8 +136,70 @@ class SearchIndex:
             
             if match:
                 results.append(first_pos)
-        
+
         return results
+
+    def get_word_distribution(self, language:str = None) -> Dict[str, int]:
+        """
+        Get word frequency distribution from the index.
+        If language is specified, only count words from that language.
+        Returns a dictionary mapping words to their frequency counts.
+        """
+        word_freq = Counter()
+
+        for word, positions in self.index.items():
+            if language:
+                # Filter by language
+                count = sum(1 for pos in positions if pos.language == language)
+            else:
+                count = len(positions)
+
+            if count > 0:
+                word_freq[word] = count
+
+        return dict(word_freq)
+
+    def get_top_words(self, n:int = 10, language:str = None) -> List[Tuple[str, int]]:
+        """
+        Get the top N most frequent words.
+        If language is specified, only count words from that language.
+        Returns a list of (word, count) tuples sorted by frequency.
+        """
+        distribution = self.get_word_distribution(language)
+        return Counter(distribution).most_common(n)
+
+    def process_single_document(self, filepath:str, language:str = 'en') -> Dict[str, int]:
+        """
+        Process a single document and return its word distribution without adding to index.
+        This is useful for analyzing new documents against an existing corpus.
+        """
+        with open(filepath, 'r', encoding='utf-8') as file:
+            content = file.read()
+
+        # Split into paragraphs and process
+        paragraphs = content.split('\n\n')
+        all_tokens = []
+
+        for para in paragraphs:
+            tokens = self.process_text(para, language)
+            all_tokens.extend(tokens)
+
+        # Create distribution
+        return dict(Counter(all_tokens))
+
+    def tag_document_with_language(self, filepath:str, language:str = 'en') -> None:
+        """
+        Process and index a single document with a specific language tag.
+        """
+        with open(filepath, 'r', encoding='utf-8') as file:
+            content = file.read()
+
+        filename = os.path.basename(filepath)
+        paragraphs = content.split('\n\n')
+
+        for i, para in enumerate(paragraphs):
+            tokens = self.process_text(para, language)
+            self.index_tokens(tokens, i, filename, language)
 
 
 
