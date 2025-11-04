@@ -21,11 +21,12 @@ if st.button(key='char',label="Perform Word Analysis"):
 word_analysis = st.text_input("Enter String for word analysis")
 word_analysis_2 = st.text_input("Enter Reference string")
 if st.button(key='word',label="Perform Word Analysis"):
-    all_words = transformations.List_all_words(word_analysis)
-    all_words_starting_with = transformations.List_all_starting_with(word_analysis_2, all_words)
-    
-    print(all_words)
-    print(all_words_starting_with)
+    tokens, length = transformations.List_all_words(word_analysis)
+    all_words_starting_with = transformations.List_all_starting_with(word_analysis_2, tokens)
+
+    st.write(tokens)
+    st.write(length)
+    st.write(all_words_starting_with)
     
 
 stop_words = st.multiselect(
