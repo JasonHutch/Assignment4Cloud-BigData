@@ -90,8 +90,6 @@ class Transformations:
 
         return char_freq
                 
-        
-    
     def Count_freq_chars(self, input_string:str, char_count) -> str:
         """
         Get the freqeunce of each char from S in T
@@ -103,8 +101,7 @@ class Transformations:
             char_freq[key] = value / input_length
             
         return char_freq
-            
-        
+  
     def Replace_with_char(self,char:str, input_string:str, char_count) -> str:
         """
         Find every character in T that is also present in S, and replace all those characters with the single character C that you are given.
@@ -117,3 +114,9 @@ class Transformations:
         return input_string
     
     
+    
+    def List_all_words(self, input_string:str) -> str:
+        tokens = re.findall(r"[A-Za-z']+", input_string.lower())
+        return tokens
+        
+        
