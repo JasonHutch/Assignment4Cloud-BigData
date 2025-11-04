@@ -114,9 +114,100 @@ class Transformations:
         return input_string
     
     
-    
     def List_all_words(self, input_string:str) -> str:
         tokens = re.findall(r"[A-Za-z']+", input_string.lower())
-        return tokens
+        tokens = list(dict.fromkeys(tokens))
         
-        
+        return tokens, len(tokens)
+    
+    def List_all_starting_with(self, ref_string, all_words):
+        """
+        For each character in ref_string, list all words from all_words that begin with that character.
+        Returns a list of tuples: [(char, [word1, word2, ...]), ...] preserving the order of first appearance
+        of characters in ref_string. Comparison is case-insensitive; non-alphabetic characters are ignored.
+        """
+        result = []
+        if not ref_string:
+            return result
+
+        # Normalize all_words into a list of strings (preserve original casing for output)
+        if isinstance(all_words, str):
+            words = re.findall(r"[A-Za-z']+", all_words)
+        elif isinstance(all_words, (list, tuple, set)):
+            words = [w for w in all_words if isinstance(w, str)]
+        else:
+            words = re.findall(r"[A-Za-z']+", str(all_words))
+
+        seen = set()
+        for ch in str(ref_string):
+            cl = ch.lower()
+            if cl in seen:
+                continue
+            seen.add(cl)
+            if not cl.isalpha():
+                continue
+            matches = [w for w in words if w.lower().startswith(cl)]
+            result.append((cl, matches))
+
+        return result
+
+    def Remove_stop_words_custom(self, stop_words_list: list, text_T: str, string_S: str = None) -> dict:
+        """
+        Remove custom stop words from text.
+
+        Args:
+            stop_words_list: List of stop words to remove (up to 10)
+            text_T: The text to process
+            string_S: Optional reference string (for future use)
+
+        Returns:
+            dict with keys:
+                - 'removed_count': Number of stop words removed
+                - 'resulting_text': Text after removing stop words
+                - 'original_text': Original text
+                - 'stop_words_used': List of stop words that were actually found and removed
+        """
+        # Limit to 10 stop words as per requirement
+        stop_words_list = stop_words_list[:10] if len(stop_words_list) > 10 else stop_words_list
+
+        # Convert stop words to lowercase for case-insensitive matching
+        stop_words_set = set(word.lower().strip() for word in stop_words_list if word.strip())
+
+        # Extract words from text while preserving structure
+        words = re.findall(r"[A-Za-z']+", text_T)
+
+        # Track removed words
+        removed_count = 0
+        removed_words = set()
+
+        # Create a copy of the text to modify
+        resulting_text = text_T
+
+        # Remove stop words (case-insensitive)
+        for word in words:
+            if word.lower() in stop_words_set:
+                # Use word boundary regex to replace whole words only
+                pattern = r'\b' + re.escape(word) + r'\b'
+                matches = re.findall(pattern, resulting_text, re.IGNORECASE)
+                removed_count += len(matches)
+                removed_words.add(word.lower())
+                # Replace with empty string but keep punctuation/spacing
+                resulting_text = re.sub(pattern, '', resulting_text, flags=re.IGNORECASE)
+
+        # Clean up extra spaces
+        resulting_text = re.sub(r'\s+', ' ', resulting_text).strip()
+        # Clean up orphaned punctuation and spaces
+        resulting_text = re.sub(r'\s+([.,!?;:])', r'\1', resulting_text)
+        resulting_text = re.sub(r'([.,!?;:])\s*([.,!?;:])', r'\1', resulting_text)
+
+        return {
+            'removed_count': removed_count,
+            'resulting_text': resulting_text,
+            'original_text': text_T,
+            'stop_words_used': sorted(list(removed_words))
+        }
+
+
+
+
+

@@ -18,15 +18,36 @@ if st.button(key='char',label="Perform Word Analysis"):
     st.write(replace_chars)
     
 
-# word_analysis = st.text_input("Enter String for word analysis")
-# if st.button(key='word',label="Perform Word Analysis"):
+word_analysis = st.text_input("Enter String for word analysis")
+word_analysis_2 = st.text_input("Enter Reference string")
+if st.button(key='word',label="Perform Word Analysis"):
+    all_words = transformations.List_all_words(word_analysis)
+    all_words_starting_with = transformations.List_all_starting_with(word_analysis_2, all_words)
+    
+    print(all_words)
+    print(all_words_starting_with)
     
 
-# stop_words = st.text_input("Stop words")
-# stop_word_string = st.text_input("Stop word string")
-# st.button(
-#     key='stop',
-#     label="Perform Word Analysis"
-# )
+stop_words = st.multiselect(
+    "Select stop words to remove (up to 10)",
+    options=["the", "and", "or", "but", "is", "are", "was", "were", "in", "on",
+             "at", "by", "for", "with", "about", "of", "to", "from", "as", "it",
+             "a", "an", "if", "while", "i", "you", "he", "she", "they", "we"],
+    max_selections=10
+)
+stop_word_string = st.text_input("Enter text to remove stop words from")
+
+if st.button(key='stop', label="Remove Stop Words"):
+    if stop_words and stop_word_string:
+        result = transformations.Remove_stop_words_custom(stop_words, stop_word_string)
+
+        st.write("**Original Text:**", result['original_text'])
+        st.write("**Resulting Text:**", result['resulting_text'])
+        st.write("**Stop Words Removed:**", ", ".join(result['stop_words_used']))
+        st.write("**Total Occurrences Removed:**", result['removed_count'])
+    elif not stop_words:
+        st.warning("Please select at least one stop word")
+    elif not stop_word_string:
+        st.warning("Please enter text to process")
 
 
