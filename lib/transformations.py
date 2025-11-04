@@ -71,3 +71,49 @@ class Transformations:
         cleaned_text = input_text.translate(translator)
         
         return cleaned_text
+    
+    def Count_num_chars(self, ref_string: str, input_string: str) -> str:
+        """
+        Count the total number of each char from S in T
+        """
+        char_freq = dict()
+
+        # inital counts for chars in ref_string
+        for char in ref_string:
+            if char not in char_freq:
+                char_freq[char] = 0
+
+        # count occurrences in input_string
+        for char in input_string:
+            if char in char_freq:
+                char_freq[char] += 1
+
+        return char_freq
+                
+        
+    
+    def Count_freq_chars(self, input_string:str, char_count) -> str:
+        """
+        Get the freqeunce of each char from S in T
+        """
+        char_freq = char_count.copy()
+        input_length = len(input_string)
+        
+        for key,value in char_freq.items():
+            char_freq[key] = value / input_length
+            
+        return char_freq
+            
+        
+    def Replace_with_char(self,char:str, input_string:str, char_count) -> str:
+        """
+        Find every character in T that is also present in S, and replace all those characters with the single character C that you are given.
+        """
+
+        for key, value in char_count.items():
+            if value > 0:
+                input_string = input_string.replace(key, char)
+
+        return input_string
+    
+    
